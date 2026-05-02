@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Farmacología I — USS DBIO1087</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0f13;--surface:#131820;--surface2:#1a2030;--border:#252d3a;
+  --accent:#4ade80;--accent2:#60a5fa;--warn:#fb923c;--danger:#f87171;
+  --text:#e2e8f0;--muted:#64748b;--correct-bg:#0f2d1a;--correct-border:#4ade80;
+  --wrong-bg:#2d0f0f;--wrong-border:#f87171;--reveal-border:#4ade80;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:radial-gradient(ellipse at 20% 20%,rgba(74,222,128,.04) 0%,transparent 50%),
+  radial-gradient(ellipse at 80% 80%,rgba(96,165,250,.04) 0%,transparent 50%);pointer-events:none;z-index:0;}
+
+.wrap{max-width:820px;margin:0 auto;padding:32px 20px 80px;position:relative;z-index:1;}
+
+/* HEADER */
+header{text-align:center;margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+.badge{display:inline-flex;align-items:center;gap:6px;background:rgba(74,222,128,.08);
+  border:1px solid rgba(74,222,128,.25);color:var(--accent);font-size:11px;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;padding:4px 14px;border-radius:20px;margin-bottom:14px;}
+h1{font-family:'Syne',sans-serif;font-size:clamp(24px,4.5vw,40px);font-weight:800;
+  letter-spacing:-.02em;line-height:1.1;margin-bottom:10px;}
+h1 em{color:var(--accent);font-style:normal;}
+.sub{color:var(--muted);font-size:14px;line-height:1.6;max-width:500px;margin:0 auto 16px;}
+.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:14px;}
+.chip{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 10px;border-radius:20px;border:1px solid;}
+
+/* PROGRESS */
+.prog-wrap{margin-bottom:32px;}
+.prog-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;font-weight:500;}
+.prog-bar{background:var(--surface2);border-radius:3px;height:3px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  border-radius:3px;transition:width .4s cubic-bezier(.4,0,.2,1);width:0%;}
+
+/* QUESTION CARD */
+.qcard{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:28px 28px 24px;margin-bottom:20px;display:none;animation:slideIn .3s ease;}
+.qcard.active{display:block;}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.qmeta{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.qnum{font-family:'Syne',sans-serif;font-size:10px;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent2);}
+.qtopic{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 8px;border-radius:4px;border:1px solid;}
+.qtext{font-size:15px;line-height:1.65;margin-bottom:20px;color:var(--text);font-weight:400;}
+
+/* VISUAL BOX */
+.qvis{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  padding:18px 16px;margin-bottom:20px;overflow-x:auto;}
+.qvis svg{display:block;max-width:100%;}
+.ax{stroke:var(--border);stroke-width:1.5;}
+.clabel{font-size:11px;fill:var(--muted);font-family:'DM Sans',sans-serif;}
+.ca{fill:none;stroke:#4ade80;stroke-width:2.5;}
+.cb{fill:none;stroke:#60a5fa;stroke-width:2.5;}
+.cc{fill:none;stroke:#fb923c;stroke-width:2.5;}
+.cd{fill:none;stroke:#c084fc;stroke-width:2;stroke-dasharray:5,3;}
+.dashed{stroke:var(--muted);stroke-width:1;stroke-dasharray:4,3;}
+.tickl{stroke:var(--muted);stroke-width:1;}
+
+/* TABLES */
+.qtbl{width:100%;border-collapse:collapse;font-size:12px;line-height:1.4;}
+.qtbl th{background:rgba(74,222,128,.08);color:var(--accent);font-family:'Syne',sans-serif;
+  font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:7px 10px;
+  text-align:left;border:1px solid var(--border);}
+.qtbl td{padding:7px 10px;border:1px solid var(--border);color:var(--muted);vertical-align:top;}
+.qtbl td:first-child{color:var(--text);font-weight:500;}
+
+/* OPTIONS */
+.opts{display:flex;flex-direction:column;gap:9px;}
+.optbtn{display:flex;align-items:flex-start;gap:11px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:8px;padding:13px 15px;cursor:pointer;
+  text-align:left;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13.5px;
+  line-height:1.5;transition:all .13s ease;width:100%;}
+.optbtn:hover:not(:disabled){border-color:var(--accent2);background:rgba(96,165,250,.06);transform:translateX(2px);}
+.optbtn .let{min-width:22px;height:22px;border-radius:5px;border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;
+  font-size:11px;font-weight:800;flex-shrink:0;transition:all .13s ease;}
+.optbtn.correct{background:var(--correct-bg);border-color:var(--correct-border);}
+.optbtn.correct .let{background:var(--correct-border);border-color:var(--correct-border);color:#000;}
+.optbtn.wrong{background:var(--wrong-bg);border-color:var(--wrong-border);}
+.optbtn.wrong .let{background:var(--wrong-border);border-color:var(--wrong-border);color:#000;}
+.optbtn.reveal{border-color:var(--correct-border);opacity:.55;}
+.optbtn:disabled{cursor:default;}
+
+/* EXPLANATION */
+.expl{display:none;margin-top:14px;padding:14px 16px;background:rgba(96,165,250,.05);
+  border:1px solid rgba(96,165,250,.18);border-radius:8px;font-size:13px;line-height:1.65;color:var(--text);}
+.expl.show{display:block;animation:slideIn .2s ease;}
+.expl strong{color:var(--accent2);}
+.expl .tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:1px 7px;border-radius:3px;margin-right:6px;
+  background:rgba(74,222,128,.12);color:var(--accent);border:1px solid rgba(74,222,128,.3);}
+
+/* NAV */
+.navrow{display:flex;align-items:center;justify-content:space-between;margin-top:22px;gap:10px;}
+.btn{font-family:'Syne',sans-serif;font-weight:800;font-size:12px;letter-spacing:.04em;
+  padding:9px 18px;border-radius:7px;border:none;cursor:pointer;transition:all .13s ease;
+  display:flex;align-items:center;gap:5px;}
+.btn-p{background:var(--accent);color:#000;}
+.btn-p:hover{background:#6ee7a0;transform:translateY(-1px);}
+.btn-p:disabled{background:var(--border);color:var(--muted);cursor:default;transform:none;}
+.btn-g{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-g:hover{border-color:var(--accent2);color:var(--text);}
+.btn-g:disabled{opacity:.4;cursor:default;}
+
+/* START SCREEN */
+#start{text-align:center;}
+.start-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:40px 32px;max-width:540px;margin:0 auto;}
+.start-card h2{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:10px;}
+.start-card p{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:22px;}
+.info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
+.info-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 8px;text-align:center;}
+.info-box .n{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--accent);}
+.info-box .l{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* RESULTS */
+#results{display:none;text-align:center;}
+#results.show{display:block;animation:slideIn .4s ease;}
+.ring-wrap{width:150px;height:150px;margin:0 auto 28px;position:relative;}
+.ring-wrap svg{transform:rotate(-90deg);}
+.rbg{fill:none;stroke:var(--surface2);stroke-width:12;}
+.rfg{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1);}
+.rcenter{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.rpct{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;line-height:1;}
+.rsub{font-size:11px;color:var(--muted);margin-top:2px;}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:460px;margin:22px auto;}
+.res-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 10px;}
+.res-box .n{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;}
+.res-box .l{font-size:11px;color:var(--muted);margin-top:2px;}
+.rmsg{color:var(--muted);font-size:14px;line-height:1.6;max-width:460px;margin:16px auto 24px;}
+.breakdown{text-align:left;max-width:680px;margin:0 auto 32px;}
+.bk-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.bki{display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:7px;
+  margin-bottom:5px;font-size:12px;background:var(--surface);border:1px solid var(--border);}
+.bki .ico{font-size:15px;flex-shrink:0;}
+.bki .ref{color:var(--muted);font-size:10px;margin-top:1px;}
+
+@media(max-width:600px){
+  .qcard{padding:18px 14px 16px;}
+  .res-grid{grid-template-columns:repeat(3,1fr);gap:7px;}
+  .res-box .n{font-size:20px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="badge">⚗ DBIO1087 · Farmacología I · USS</div>
+  <h1>Test de<br><em>Farmacología</em></h1>
+  <p class="sub">Farmacodinamia · Farmacocinética · Sistema Nervioso Autónomo · Interacciones Farmacológicas</p>
+  <div class="chips">
+    <span class="chip" style="color:#4ade80;border-color:rgba(74,222,128,.35);">Farmacodinamia</span>
+    <span class="chip" style="color:#60a5fa;border-color:rgba(96,165,250,.35);">Farmacocinética</span>
+    <span class="chip" style="color:#fb923c;border-color:rgba(251,146,60,.35);">SNA</span>
+    <span class="chip" style="color:#c084fc;border-color:rgba(192,132,252,.35);">AChE</span>
+    <span class="chip" style="color:#f472b6;border-color:rgba(244,114,182,.35);">Antimuscarínicos</span>
+    <span class="chip" style="color:#facc15;border-color:rgba(250,204,21,.35);">Interacciones</span>
+  </div>
+</header>
+
+<!-- START -->
+<div id="start">
+  <div class="start-card">
+    <div style="font-size:52px;margin-bottom:14px;">🧪</div>
+    <h2>¿Preparado/a para la solemne?</h2>
+    <p>Preguntas tipo solemne USS, con gráficos y tablas integradas. Cada respuesta incluye explicación detallada.</p>
+    <div class="info-grid">
+      <div class="info-box"><div class="n">30</div><div class="l">Preguntas</div></div>
+      <div class="info-box"><div class="n">4</div><div class="l">Unidades</div></div>
+      <div class="info-box"><div class="n">100%</div><div class="l">Explicado</div></div>
+    </div>
+    <div class="chips" style="margin-bottom:22px;">
+      <span class="chip" style="color:#4ade80;border-color:rgba(74,222,128,.35);">Agonistas · Antagonistas</span>
+      <span class="chip" style="color:#60a5fa;border-color:rgba(96,165,250,.35);">LADME · Curvas FK</span>
+      <span class="chip" style="color:#fb923c;border-color:rgba(251,146,60,.35);">Receptores · Enzimas</span>
+      <span class="chip" style="color:#facc15;border-color:rgba(250,204,21,.35);">Toxicidad · IT</span>
+    </div>
+    <button class="btn btn-p" style="margin:0 auto;display:flex;font-size:14px;padding:13px 34px;" onclick="startQuiz()">Comenzar →</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz" style="display:none;">
+  <div class="prog-wrap">
+    <div class="prog-meta">
+      <span id="ptxt">Pregunta 1 de 30</span>
+      <span id="slive" style="color:var(--accent);">0 correctas</span>
+    </div>
+    <div class="prog-bar"><div class="prog-fill" id="pfill"></div></div>
+  </div>
+  <div id="qcontainer"></div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+  <div class="ring-wrap">
+    <svg width="150" height="150" viewBox="0 0 150 150">
+      <circle class="rbg" cx="75" cy="75" r="60"/>
+      <circle class="rfg" id="rarc" cx="75" cy="75" r="60" stroke="#4ade80" stroke-dasharray="376.99" stroke-dashoffset="376.99"/>
+    </svg>
+    <div class="rcenter">
+      <div class="rpct" id="rpct">0%</div>
+      <div class="rsub">puntaje</div>
+    </div>
+  </div>
+  <div class="res-grid">
+    <div class="res-box"><div class="n" id="rco" style="color:var(--accent)">0</div><div class="l">Correctas</div></div>
+    <div class="res-box"><div class="n" id="rwr" style="color:var(--danger)">0</div><div class="l">Incorrectas</div></div>
+    <div class="res-box"><div class="n" id="rtot" style="color:var(--accent2)">30</div><div class="l">Total</div></div>
+  </div>
+  <p class="rmsg" id="rmsg"></p>
+  <div class="breakdown" id="bkdown"></div>
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+    <button class="btn btn-g" onclick="reviewQuiz()">📋 Revisar respuestas</button>
+    <button class="btn btn-p" onclick="restartQuiz()">↺ Reintentar</button>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ─── SVG HELPERS ───────────────────────────────────────────────
+function svgAxisBase(w,h,margin,xLabel,yLabel){
+  const {l,r,t,b}=margin;
+  return `
+    <line x1="${l}" y1="${t}" x2="${l}" y2="${h-b}" class="ax"/>
+    <line x1="${l}" y1="${h-b}" x2="${w-r}" y2="${h-b}" class="ax"/>
+    <text x="${(w-r+l)/2}" y="${h-5}" class="clabel" text-anchor="middle">${xLabel}</text>
+    <text x="10" y="${(h-b+t)/2}" class="clabel" text-anchor="middle" transform="rotate(-90,10,${(h-b+t)/2})">${yLabel}</text>`;
+}
+
+// Curva dosis-respuesta: agonista total vs parcial vs antagonista inverso
+function svgDosisRespuesta(){
+  return `<svg width="100%" viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg">
+    ${svgAxisBase(480,220,{l:55,r:20,t:15,b:35},'Log [Fármaco]','Respuesta (% máx)')}
+    <!-- Y ticks -->
+    <line x1="51" y1="25" x2="59" y2="25" class="tickl"/><text x="48" y="29" class="clabel" text-anchor="end">100</text>
+    <line x1="51" y1="70" x2="59" y2="70" class="tickl"/><text x="48" y="74" class="clabel" text-anchor="end">75</text>
+    <line x1="51" y1="115" x2="59" y2="115" class="tickl"/><text x="48" y="119" class="clabel" text-anchor="end">50</text>
+    <line x1="51" y1="160" x2="59" y2="160" class="tickl"/><text x="48" y="164" class="clabel" text-anchor="end">25</text>
+    <!-- X ticks -->
+    <line x1="110" y1="181" x2="110" y2="189" class="tickl"/><text x="110" y="198" class="clabel" text-anchor="middle">-2</text>
+    <line x1="190" y1="181" x2="190" y2="189" class="tickl"/><text x="190" y="198" class="clabel" text-anchor="middle">-1</text>
+    <line x1="270" y1="181" x2="270" y2="189" class="tickl"/><text x="270" y="198" class="clabel" text-anchor="middle">0</text>
+    <line x1="350" y1="181" x2="350" y2="189" class="tickl"/><text x="350" y="198" class="clabel" text-anchor="middle">1</text>
+    <line x1="430" y1="181" x2="430" y2="189" class="tickl"/><text x="430" y="198" class="clabel" text-anchor="middle">2</text>
+    <!-- Agonista total (verde) - llega a 100% -->
+    <path d="M55,183 Q130,183 175,160 Q220,120 265,60 Q295,30 320,25 Q380,25 460,25" class="ca"/>
+    <!-- Agonista parcial (azul) - techo ~60% -->
+    <path d="M55,183 Q140,183 190,170 Q240,145 285,105 Q315,80 345,72 Q400,68 460,67" class="cb"/>
+    <!-- Antagonista k3=0 (naranja) - línea plana basal -->
+    <line x1="55" y1="183" x2="460" y2="183" class="cc" stroke-dasharray="6,3"/>
+    <!-- Agonista inverso (morado) - cae por debajo -->
+    <path d="M55,183 Q150,183 200,188 Q260,193 310,198 Q380,203 460,205" class="cd"/>
+    <!-- Legend -->
+    <rect x="65" y="18" width="10" height="3" fill="#4ade80" rx="1"/>
+    <text x="79" y="23" class="clabel" fill="#4ade80">Ag. completo (k₃=1)</text>
+    <rect x="65" y="32" width="10" height="3" fill="#60a5fa" rx="1"/>
+    <text x="79" y="37" class="clabel" fill="#60a5fa">Ag. parcial (0&lt;k₃&lt;1)</text>
+    <rect x="200" y="18" width="10" height="3" fill="#fb923c" rx="1"/>
+    <text x="214" y="23" class="clabel" fill="#fb923c">Antagonista (k₃=0)</text>
+    <rect x="200" y="32" width="10" height="3" fill="#c084fc" rx="1"/>
+    <text x="214" y="37" class="clabel" fill="#c084fc">Ag. inverso (k₃&lt;0)</text>
+  </svg>`;
+}
+
+// Curva antagonismo competitivo vs no competitivo
+function svgAntagonismo(){
+  return `<svg width="100%" viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg">
+    ${svgAxisBase(480,220,{l:55,r:20,t:15,b:35},'Log [Agonista]','Respuesta (% máx)')}
+    <!-- Y ticks -->
+    <line x1="51" y1="25" x2="59" y2="25" class="tickl"/><text x="48" y="29" class="clabel" text-anchor="end">100</text>
+    <line x1="51" y1="115" x2="59" y2="115" class="tickl"/><text x="48" y="119" class="clabel" text-anchor="end">50</text>
+    <!-- Curva agonista solo (verde) -->
+    <path d="M55,183 Q130,183 180,150 Q230,100 275,40 Q300,25 340,25 Q400,25 460,25" class="ca"/>
+    <!-- Competitivo dosis1 (azul) - desplazada derecha mismo techo -->
+    <path d="M55,183 Q150,183 220,160 Q280,115 330,45 Q355,25 390,25 Q430,25 460,25" class="cb"/>
+    <!-- No competitivo (naranja) - techo baja -->
+    <path d="M55,183 Q130,183 185,160 Q235,125 278,85 Q305,65 340,62 Q400,60 460,60" class="cc"/>
+    <!-- Flecha indicando desplazamiento horizontal -->
+    <line x1="275" y1="40" x2="330" y2="40" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#arrowB)"/>
+    <defs><marker id="arrowB" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#60a5fa"/></marker></defs>
+    <text x="300" y="35" class="clabel" fill="#60a5fa" text-anchor="middle">→ desplazamiento</text>
+    <!-- Flecha indicando caída de Emax -->
+    <line x1="460" y1="25" x2="460" y2="60" stroke="#fb923c" stroke-width="1.5"/>
+    <text x="455" y="44" class="clabel" fill="#fb923c" text-anchor="end">↓Emax</text>
+    <!-- Legend -->
+    <rect x="65" y="18" width="10" height="3" fill="#4ade80" rx="1"/>
+    <text x="79" y="23" class="clabel" fill="#4ade80">Agonista solo</text>
+    <rect x="160" y="18" width="10" height="3" fill="#60a5fa" rx="1"/>
+    <text x="174" y="23" class="clabel" fill="#60a5fa">+ Ant. competitivo</text>
+    <rect x="290" y="18" width="10" height="3" fill="#fb923c" rx="1"/>
+    <text x="304" y="23" class="clabel" fill="#fb923c">+ Ant. no competitivo</text>
+  </svg>`;
+}
+
+// Curva farmacocinética con parámetros
+function svgFK(){
+  return `<svg width="100%" viewBox="0 0 480 210" xmlns="http://www.w3.org/2000/svg">
+    ${svgAxisBase(480,210,{l:55,r:20,t:15,b:35},'Tiempo (horas)','Concentración plasmática')}
+    <!-- Y ticks / levels -->
+    <line x1="51" y1="35" x2="59" y2="35" class="tickl"/><text x="48" y="39" class="clabel" text-anchor="end">CMT</text>
+    <line x1="51" y1="130" x2="59" y2="130" class="tickl"/><text x="48" y="134" class="clabel" text-anchor="end">CME</text>
+    <!-- CMT and CME horizontal lines -->
+    <line x1="55" y1="35" x2="460" y2="35" stroke="#f87171" stroke-width="1.2" stroke-dasharray="6,3"/>
+    <line x1="55" y1="130" x2="460" y2="130" stroke="#4ade80" stroke-width="1.2" stroke-dasharray="6,3"/>
+    <!-- X ticks -->
+    <line x1="110" y1="171" x2="110" y2="179" class="tickl"/><text x="110" y="188" class="clabel" text-anchor="middle">2</text>
+    <line x1="185" y1="171" x2="185" y2="179" class="tickl"/><text x="185" y="188" class="clabel" text-anchor="middle">4</text>
+    <line x1="260" y1="171" x2="260" y2="179" class="tickl"/><text x="260" y="188" class="clabel" text-anchor="middle">6</text>
+    <line x1="335" y1="171" x2="335" y2="179" class="tickl"/><text x="335" y="188" class="clabel" text-anchor="middle">8</text>
+    <line x1="410" y1="171" x2="410" y2="179" class="tickl"/><text x="410" y="188" class="clabel" text-anchor="middle">10</text>
+    <!-- Curva FK (oral, verde) -->
+    <path d="M55,175 Q80,170 110,60 Q130,45 150,42 Q180,42 215,70 Q270,110 330,140 Q380,158 460,168" class="ca"/>
+    <!-- Curva IV (azul) - pico inmediato -->
+    <path d="M55,40 Q80,42 120,58 Q180,90 240,120 Q310,148 390,162 Q430,167 460,170" class="cb" stroke-dasharray="7,3"/>
+    <!-- Cmax marker (oral) -->
+    <circle cx="150" cy="42" r="4" fill="#4ade80"/>
+    <line x1="150" y1="42" x2="150" y2="175" class="dashed"/>
+    <text x="155" y="60" class="clabel" fill="#4ade80">Cmax</text>
+    <text x="148" y="188" class="clabel" fill="#4ade80" text-anchor="middle">Tmax</text>
+    <!-- tlat -->
+    <line x1="55" y1="165" x2="90" y2="165" stroke="#c084fc" stroke-width="1.5"/>
+    <text x="73" y="160" class="clabel" fill="#c084fc" text-anchor="middle">tlat</text>
+    <!-- Rango terapeutico fill -->
+    <rect x="90" y="35" width="250" height="95" fill="rgba(74,222,128,.04)" stroke="none"/>
+    <text x="215" y="88" class="clabel" fill="#4ade80" text-anchor="middle" opacity=".7">Rango terapéutico</text>
+    <!-- Legend -->
+    <rect x="65" y="18" width="10" height="3" fill="#4ade80" rx="1"/>
+    <text x="79" y="23" class="clabel" fill="#4ade80">Oral (absorción)</text>
+    <rect x="180" y="18" width="12" height="3" fill="#60a5fa" rx="1"/>
+    <text x="196" y="23" class="clabel" fill="#60a5fa">IV (F=100%)</text>
+  </svg>`;
+}
+
+// Curva índice terapéutico
+function svgIT(){
+  return `<svg width="100%" viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg">
+    ${svgAxisBase(480,220,{l:55,r:20,t:15,b:35},'Log [Fármaco]','Respuesta (% máx)')}
+    <line x1="51" y1="25" x2="59" y2="25" class="tickl"/><text x="48" y="29" class="clabel" text-anchor="end">100</text>
+    <line x1="51" y1="115" x2="59" y2="115" class="tickl"/><text x="48" y="119" class="clabel" text-anchor="end">50</text>
+    <!-- Curva efectiva (verde) -->
+    <path d="M55,183 Q130,183 178,148 Q222,100 262,48 Q285,28 315,25 Q380,25 460,25" class="ca"/>
+    <!-- Curva toxica (naranja) -->
+    <path d="M55,183 Q170,183 240,162 Q295,130 335,68 Q355,42 385,28 Q420,20 460,18" class="cc"/>
+    <!-- EC50 and [Toxica]50 markers -->
+    <line x1="262" y1="115" x2="262" y2="183" class="dashed"/>
+    <text x="262" y="198" class="clabel" fill="#4ade80" text-anchor="middle">EC₅₀</text>
+    <line x1="335" y1="115" x2="335" y2="183" class="dashed"/>
+    <text x="335" y="198" class="clabel" fill="#fb923c" text-anchor="middle">[Tox]₅₀</text>
+    <!-- IT bracket -->
+    <line x1="262" y1="115" x2="335" y2="115" stroke="#facc15" stroke-width="1.5"/>
+    <text x="298" y="108" class="clabel" fill="#facc15" text-anchor="middle">IT = [Tox]₅₀/EC₅₀</text>
+    <!-- Legend -->
+    <rect x="65" y="18" width="10" height="3" fill="#4ade80" rx="1"/>
+    <text x="79" y="23" class="clabel" fill="#4ade80">Curva efectiva</text>
+    <rect x="185" y="18" width="10" height="3" fill="#fb923c" rx="1"/>
+    <text x="199" y="23" class="clabel" fill="#fb923c">Curva tóxica</text>
+  </svg>`;
+}
+
+// Comparación vías de administración
+function svgVias(){
+  return `<svg width="100%" viewBox="0 0 480 210" xmlns="http://www.w3.org/2000/svg">
+    ${svgAxisBase(480,210,{l:55,r:20,t:15,b:35},'Tiempo (horas)','Concentración plasmática')}
+    <line x1="51" y1="130" x2="59" y2="130" class="tickl"/><text x="48" y="134" class="clabel" text-anchor="end">CME</text>
+    <line x1="55" y1="130" x2="460" y2="130" stroke="#4ade80" stroke-width="1" stroke-dasharray="5,3"/>
+    <!-- X ticks -->
+    <line x1="100" y1="166" x2="100" y2="174" class="tickl"/><text x="100" y="183" class="clabel" text-anchor="middle">2</text>
+    <line x1="180" y1="166" x2="180" y2="174" class="tickl"/><text x="180" y="183" class="clabel" text-anchor="middle">4</text>
+    <line x1="260" y1="166" x2="260" y2="174" class="tickl"/><text x="260" y="183" class="clabel" text-anchor="middle">6</text>
+    <line x1="340" y1="166" x2="340" y2="174" class="tickl"/><text x="340" y="183" class="clabel" text-anchor="middle">8</text>
+    <!-- IV -->
+    <path d="M55,35 Q75,37 110,55 Q170,88 240,118 Q305,143 390,158 Q430,163 460,165" class="ca" stroke-dasharray="7,3"/>
+    <!-- IM -->
+    <path d="M55,170 Q70,165 100,80 Q120,45 140,38 Q170,38 205,60 Q265,98 330,132 Q390,155 460,163" class="cb"/>
+    <!-- Oral -->
+    <path d="M55,170 Q95,170 145,148 Q195,118 235,75 Q260,52 290,45 Q330,45 380,75 Q420,100 460,130" class="cc"/>
+    <!-- Transdérmico (línea plana) -->
+    <path d="M55,170 Q100,170 150,168 Q200,160 280,138 Q350,128 460,126" class="cd"/>
+    <!-- Legend -->
+    <rect x="65" y="17" width="10" height="3" fill="#4ade80" rx="1"/>
+    <text x="79" y="22" class="clabel" fill="#4ade80">IV</text>
+    <rect x="105" y="17" width="10" height="3" fill="#60a5fa" rx="1"/>
+    <text x="119" y="22" class="clabel" fill="#60a5fa">IM</text>
+    <rect x="145" y="17" width="10" height="3" fill="#fb923c" rx="1"/>
+    <text x="159" y="22" class="clabel" fill="#fb923c">Oral</text>
+    <rect x="195" y="17" width="10" height="3" fill="#c084fc" rx="1"/>
+    <text x="209" y="22" class="clabel" fill="#c084fc">Transdérmico</text>
+  </svg>`;
+}
+
+// ─── QUESTIONS DATA ────────────────────────────────────────────
+const Q=[
+// ─── FARMACODINAMIA ──────────────────────────────────────────
+{t:"Farmacodinamia",tc:"#4ade80",
+ q:"Observa el siguiente gráfico de curvas dosis-respuesta. ¿Cuál de las siguientes afirmaciones es CORRECTA respecto a los fármacos representados?",
+ vis:svgDosisRespuesta(),
+ o:["El agonista parcial tiene mayor eficacia que el agonista completo porque su curva alcanza el 50% del efecto más rápidamente.",
+    "El antagonista (k₃=0) genera respuesta propia al ocupar el receptor, impidiendo que el agonista actúe.",
+    "El agonista completo tiene mayor eficacia que el parcial, pero ambos pueden tener potencias similares según su EC₅₀.",
+    "El agonista inverso produce el mismo efecto que un antagonista porque ambos tienen k₃=0."],
+ c:2,
+ e:"<strong>Eficacia</strong> es la intensidad máxima del efecto (altura de la curva = Emax). El agonista completo alcanza Emax del 100%, el parcial tiene un techo inferior. Ambos pueden tener EC₅₀ similares (misma potencia). El antagonista (k₃=0) no genera respuesta propia pero bloquea al agonista endógeno. El agonista inverso (k₃&lt;0) activa el receptor en sentido <em>opuesto</em> a la actividad constitutiva, diferente al antagonista."},
+
+{t:"Farmacodinamia",tc:"#4ade80",
+ q:"Observa las curvas de antagonismo en el gráfico. Un fármaco antagonista produce desplazamiento <strong>horizontal</strong> de la curva del agonista hacia la derecha, con el mismo Emax. ¿Qué tipo de antagonismo es y qué parámetro farmacodinámico cambia?",
+ vis:svgAntagonismo(),
+ o:["Antagonismo no competitivo; el Emax disminuye porque el fármaco modifica la conformación del receptor.",
+    "Antagonismo competitivo; disminuye la potencia del agonista (aumenta el EC₅₀/Kd) pero no cambia la eficacia.",
+    "Antagonismo funcional; el fármaco actúa en receptor distinto generando efecto opuesto.",
+    "Antagonismo irreversible; el fármaco se une covalentemente impidiendo la activación del receptor."],
+ c:1,
+ e:"<strong>Antagonismo competitivo:</strong> el antagonista compite por el <em>mismo sitio activo</em> que el agonista. Es reversible. Con más agonista se puede desplazar al antagonista → la curva se mueve a la derecha (necesita más agonista para el mismo efecto) pero el Emax <em>no cambia</em>. Lo que cambia es el EC₅₀ (↑) → pierde <strong>potencia</strong>. El Kd del agonista aumenta (aparente menor afinidad)."},
+
+{t:"Farmacodinamia",tc:"#4ade80",
+ q:"En el gráfico de curvas dosis-respuesta para antagonismo, la curva naranja muestra que al agregar el antagonista el techo de la respuesta baja sin desplazamiento horizontal. ¿Qué parámetro cambia y por qué no se puede revertir aumentando la dosis de agonista?",
+ vis:svgAntagonismo(),
+ o:["Disminuye la potencia porque el antagonista aumenta el EC₅₀ del agonista al unirse en el mismo sitio activo.",
+    "Disminuye la eficacia (Emax) porque el antagonista alostérico cambia la conformación del receptor, afectando k₃ independientemente de la concentración de agonista.",
+    "Disminuye la eficacia porque el antagonista bloquea la recaptación del agonista endógeno.",
+    "Aumenta la potencia porque el antagonista aumenta la afinidad del agonista por el receptor."],
+ c:1,
+ e:"<strong>Antagonismo no competitivo/alostérico:</strong> el fármaco se une en un sitio diferente (alostérico). Cambia la conformación del receptor → aunque el agonista se una a su sitio, el receptor no puede activarse igual → cae la <strong>eficacia (Emax)</strong>. El Kd del agonista no cambia significativamente. Como el antagonista NO compite por el mismo sitio, agregar más agonista no revierte el efecto. El Emax solo se recuperaría con nuevos receptores."},
+
+{t:"Farmacodinamia",tc:"#4ade80",
+ q:"Un laboratorio analiza el índice terapéutico (IT) del siguiente gráfico. Si el EC₅₀ = 10 mg y la [Tóxica]₅₀ = 80 mg, ¿cuál es el IT y cómo se interpreta clínicamente?",
+ vis:svgIT(),
+ o:["IT = 8; es un fármaco de margen terapéutico amplio, bajo riesgo de toxicidad a dosis terapéuticas.",
+    "IT = 8; es un fármaco peligroso porque la diferencia entre EC₅₀ y [Tox]₅₀ es demasiado pequeña.",
+    "IT = 0.125; el fármaco tiene mayor probabilidad de ser tóxico que terapéutico.",
+    "IT = 8; pero solo es relevante para fármacos administrados por vía intravenosa."],
+ c:0,
+ e:"<strong>IT = [Tóxica]₅₀ / EC₅₀ = 80/10 = 8</strong>. Un IT alto (≫1) significa que la concentración tóxica es mucho mayor que la terapéutica → margen amplio → fármaco más seguro. IT bajo (ej: warfarina IT≈2, digoxina IT≈2, litio IT≈3) significa margen estrecho → vigilancia estricta. El IT NO depende de la vía de administración, es una propiedad farmacodinámica intrínseca del fármaco."},
+
+{t:"Farmacodinamia",tc:"#4ade80",
+ q:"Una benzodiacepina actúa sobre el receptor GABA-A. Considerando el mecanismo farmacológico, ¿cuál es la descripción correcta de su acción?",
+ o:["Es un agonista directo de GABA-A: se une al mismo sitio que el GABA y abre directamente el canal de Cl⁻.",
+    "Es un antagonista competitivo: bloquea el sitio del GABA impidiendo la entrada de Cl⁻.",
+    "Es un modulador alostérico positivo: se une a un sitio diferente al GABA y aumenta la frecuencia de apertura del canal cuando el GABA está presente.",
+    "Es un agonista inverso: produce el efecto opuesto al GABA, bloqueando la entrada de Cl⁻."],
+ c:2,
+ e:"Las <strong>benzodiacepinas</strong> se unen a un <em>sitio alostérico</em> distinto al sitio del GABA en el receptor GABA-A. NO abren el canal por sí solas (no activan en ausencia de GABA). Cuando GABA está presente, las benzodiacepinas <strong>aumentan la frecuencia de apertura</strong> del canal de Cl⁻ → mayor entrada de Cl⁻ → hiperpolarización → depresión del SNC. Esto explica sus efectos: ansiolítico, hipnótico, anticonvulsivante y relajante muscular."},
+
+{t:"Farmacodinamia",tc:"#4ade80",
+ q:"Un agonista parcial (k₃=0.4) se administra a un paciente que ya tiene un agonista total activo en sus receptores. ¿Qué efecto producirá el agonista parcial en ese contexto?",
+ o:["Actuará como agonista total sumando sus efectos, porque ambos activan el mismo receptor.",
+    "Actuará como antagonista competitivo funcional: desplazará al agonista total del sitio activo y limitará la respuesta máxima a su propio techo.",
+    "No tendrá efecto porque el receptor ya está completamente ocupado por el agonista total.",
+    "Potenciará el efecto del agonista total por modulación alostérica positiva."],
+ c:1,
+ e:"Un <strong>agonista parcial como antagonista funcional:</strong> al competir por el mismo sitio activo que el agonista total, lo desplaza parcialmente. Como el parcial tiene menor actividad intrínseca (k₃&lt;1), la respuesta máxima queda limitada al techo del parcial → <em>reduce</em> el efecto del total. Clínicamente se usa cuando no hay antagonistas disponibles para una intoxicación por agonista total. Ej: buprenorfina para modular una intoxicación por morfina."},
+
+{t:"Farmacodinamia",tc:"#4ade80",
+ q:"La aspirina (AAS) a dosis bajas inhibe la COX-1 en plaquetas de forma irreversible. ¿Por qué se administra una vez al día si la vida media plasmática de la aspirina es solo de 15–20 minutos?",
+ o:["Porque la aspirina tiene metabolitos activos que continúan inhibiendo la COX durante 24 horas.",
+    "Porque las plaquetas no tienen núcleo y no pueden sintetizar nueva COX, por lo que el efecto dura toda la vida de la plaqueta (7-10 días).",
+    "Porque la aspirina tiene alta unión a proteínas plasmáticas que actúan como reservorio liberándola lentamente.",
+    "Porque la aspirina se distribuye extensamente en tejido graso con liberación lenta."],
+ c:1,
+ e:"La aspirina realiza <strong>inhibición irreversible covalente</strong> de la COX (acetilación del sitio activo). La vida media plasmática corta solo indica cuánto tiempo está el fármaco en sangre. Las plaquetas <em>no tienen núcleo</em> → no pueden sintetizar proteínas nuevas → no pueden regenerar la COX. El bloqueo dura toda la vida de la plaqueta (~7-10 días). Por eso se usa para antiagregación plaquetaria con una dosis diaria de 75-100 mg."},
+
+{t:"Farmacodinamia",tc:"#4ade80",
+ q:"En la regulación de receptores, un paciente con EPOC usa salbutamol (agonista β₂) en spray varias veces al día durante meses. Con el tiempo nota que el broncodilatador ya no lo alivia igual. ¿Cuál mecanismo explica mejor este fenómeno?",
+ o:["Up-regulation: el organismo sintetiza más receptores β₂ para compensar el exceso de estimulación.",
+    "Down-regulation: la estimulación crónica lleva a internalización y degradación de receptores β₂, reduciendo los disponibles en membrana.",
+    "Antagonismo funcional: el organismo libera más acetilcolina para contrarrestar el efecto broncodilatador.",
+    "Taquifilaxia por síntesis de metabolitos que bloquean competitivamente el receptor β₂."],
+ c:1,
+ e:"<strong>Down-regulation (taquifilaxia/tolerancia):</strong> La estimulación crónica activa GRKs → fosforilan el receptor → reclutamiento de β-arrestina → internalización del receptor en endosomas → degradación lisosomal. Resultado: menos receptores disponibles en membrana → menor respuesta al mismo estímulo. El paciente requiere dosis más altas o frecuentes para el mismo efecto (tolerancia). Esto explica por qué se recomienda el uso <em>a demanda</em> de β₂ de acción corta, no de forma regular."},
+
+// ─── FARMACOCINÉTICA ─────────────────────────────────────────
+{t:"Farmacocinética",tc:"#60a5fa",
+ q:"Observa el gráfico de curvas farmacocinéticas. ¿Qué parámetro indica el área bajo la curva (AUC) y para qué sirve clínicamente?",
+ vis:svgFK(),
+ o:["El AUC indica la concentración máxima alcanzada; sirve para ajustar la dosis en insuficiencia renal.",
+    "El AUC representa la biodisponibilidad total del fármaco; se usa para calcular el factor F comparando AUC oral con AUC IV.",
+    "El AUC indica la velocidad de distribución del fármaco hacia los tejidos periféricos.",
+    "El AUC corresponde al tiempo en que el fármaco permanece dentro del rango terapéutico."],
+ c:1,
+ e:"<strong>AUC (Área Bajo la Curva)</strong> = toda la exposición del organismo al fármaco a lo largo del tiempo. Se calcula como el área sombreada bajo la curva de concentración vs tiempo. <strong>Biodisponibilidad F = AUC oral / AUC IV × 100%</strong>. Si un fármaco tiene AUC oral = 60% del AUC IV → F=60%. Mayor AUC = más fármaco llegó a circulación sistémica. También se usa para calcular el aclaramiento (CL = Dosis/AUC)."},
+
+{t:"Farmacocinética",tc:"#60a5fa",
+ q:"Observa el gráfico comparativo de vías de administración. ¿Cuál es la ventaja farmacocinética principal de la vía transdérmica sobre la vía oral para un antihipertensivo?",
+ vis:svgVias(),
+ o:["La vía transdérmica tiene mayor biodisponibilidad que la oral porque no existe absorción gastrointestinal.",
+    "La vía transdérmica genera concentraciones plasmáticas más estables (sin picos ni valles), reduciendo las RAMs dosis-dependientes.",
+    "La vía transdérmica tiene inicio de acción más rápido que la oral, útil en emergencias hipertensivas.",
+    "La vía transdérmica evita el metabolismo hepático total, lo que la hace superior para todos los fármacos."],
+ c:1,
+ e:"La <strong>vía transdérmica</strong> libera el fármaco de forma continua y constante (orden 0) → curva plana = estado estacionario. Sin picos tóxicos ni valles sub-terapéuticos → <strong>menos RAMs dosis-dependientes</strong>. Por eso se cambia de oral a transdérmica en antihipertensivos, opioides crónicos, anticonceptivos, etc. También evita primer paso hepático. La IV tiene inicio más rápido (emergencias). El transdérmico <em>no</em> es más rápido que oral."},
+
+{t:"Farmacocinética",tc:"#60a5fa",
+ q:"Un fármaco ácido débil (pKa=4.5) se administra oralmente. ¿En qué compartimento estará más ionizado y por qué es relevante para su excreción renal?",
+ o:["En el jugo gástrico (pH~2): más ionizado → se absorbe mejor en el estómago.",
+    "En la orina alcalina (pH~8): más ionizado → queda atrapado en orina → mayor excreción renal.",
+    "En el plasma (pH 7.4): menos ionizado → atraviesa membranas fácilmente hacia tejidos.",
+    "En todos los compartimentos igual, porque la ionización no depende del pH fisiológico."],
+ c:1,
+ e:"<strong>Ecuación de Henderson-Hasselbalch:</strong> pH = pKa + log[A⁻]/[AH]. Para ácidos débiles: a pH mayor que pKa → más ionizado. En orina alcalina (pH 8 >> pKa 4.5) → el ácido queda casi totalmente ionizado → no puede reabsorberse (la forma ionizada no cruza membranas) → <strong>queda atrapado en orina → mayor excreción</strong>. Esto se usa clínicamente: alcalinizar orina con bicarbonato aumenta la excreción de ácidos débiles en intoxicaciones (ej: AAS, barbitúricos)."},
+
+{t:"Farmacocinética",tc:"#60a5fa",
+ q:"El enalapril es un profármaco que se convierte en enalaprilat en el hígado. Un paciente con cirrosis hepática Child-Pugh C inicia tratamiento antihipertensivo con enalapril oral. ¿Qué consecuencia farmacocinética es esperable?",
+ o:["Mayor biodisponibilidad del enalaprilat porque la cirrosis aumenta el flujo hepático.",
+    "Menor efecto antihipertensivo porque la cirrosis reduce la biotransformación del profármaco a su forma activa.",
+    "Mayor toxicidad renal porque el enalapril no metabolizado se acumula en riñón.",
+    "Sin cambios significativos porque el enalaprilat se forma principalmente en el riñón."],
+ c:1,
+ e:"<strong>Profármaco</strong> = forma inactiva que requiere metabolización hepática para generar el metabolito activo. En cirrosis: función del CYP450 y esterasas hepáticas reducida → <em>menor conversión</em> de enalapril → enalaprilat → <strong>menos fármaco activo disponible → menor efecto antihipertensivo</strong>. La dosis puede resultar insuficiente. Se debe considerar ajuste o cambio a un fármaco que no requiera activación hepática. Diferente si fuera un fármaco que ya se administra activo (ese tendría mayor biodisponibilidad por menor metabolismo de primer paso)."},
+
+{t:"Farmacocinética",tc:"#60a5fa",
+ q:"Un fármaco tiene un volumen de distribución (Vd) de 35 L/kg en un paciente de 70 kg. ¿Qué inferencia es correcta sobre su distribución?",
+ o:["El fármaco se distribuye principalmente en plasma, con poca penetración tisular.",
+    "El fármaco se distribuye extensamente en tejidos periféricos (grasa, músculo), con baja concentración plasmática.",
+    "El fármaco tiene alta unión a proteínas plasmáticas, lo que eleva su Vd artificialmente.",
+    "Un Vd alto indica que el fármaco se elimina rápidamente por riñón."],
+ c:1,
+ e:"<strong>Vd = Dosis / Concentración plasmática</strong>. Un Vd muy alto (35 L/kg × 70 kg = 2450 L) es imposible fisiológicamente → indica que el fármaco tiene enorme afinidad por tejidos → baja concentración en plasma → alta en tejidos. Ejemplos: cloroquina Vd ~250–800 L/kg, digoxina ~7 L/kg. Vd bajo (~0.1 L/kg) → permanece en plasma (ej: warfarina, albumina). Implicación clínica: fármacos con Vd muy alto son difíciles de eliminar con diálisis (el fármaco está en tejidos, no en sangre)."},
+
+{t:"Farmacocinética",tc:"#60a5fa",
+ q:"La sertralina es un ISRS (inhibidor selectivo de recaptación de serotonina). ¿Cuál de las siguientes interacciones farmacocinéticas es más probable si se co-administra con otro fármaco metabolizado por CYP2D6?",
+ o:["La sertralina acelera el metabolismo del otro fármaco al inducir el CYP2D6, disminuyendo sus niveles plasmáticos.",
+    "La sertralina inhibe el CYP2D6, aumentando las concentraciones plasmáticas del fármaco co-administrado y su potencial toxicidad.",
+    "La sertralina compite por la unión a proteínas plasmáticas, desplazando al otro fármaco y aumentando su fracción libre.",
+    "La sertralina reduce la absorción intestinal del otro fármaco al inhibir el transportador P-gp."],
+ c:1,
+ e:"La <strong>sertralina es inhibidora del CYP2D6</strong>. Al inhibir esta enzima, el metabolismo del fármaco co-administrado se enlentece → acumulación → <strong>concentraciones plasmáticas más altas → mayor riesgo de toxicidad</strong>. Esto es una <strong>interacción farmacocinética</strong> a nivel del metabolismo (fase M del LADME). Relevante con fármacos de índice terapéutico estrecho metabolizados por CYP2D6 (ej: algunos antiarrítmicos, tricíclicos). La inhibición de CYP ≠ inducción (que aumentaría el metabolismo)."},
+
+// ─── SNA Y AGONISTAS COLINÉRGICOS ────────────────────────────
+{t:"Sistema Nervioso Autónomo",tc:"#fb923c",
+ q:"La neostigmina es un inhibidor reversible de la acetilcolinesterasa (AChE). ¿Por qué se denomina agonista colinérgico <em>indirecto</em> y no directo?",
+ o:["Porque actúa sobre receptores nicotínicos, no muscarínicos, generando efectos indirectos en el tejido diana.",
+    "Porque no actúa directamente sobre el receptor de acetilcolina, sino que aumenta los niveles de ACh endógena en la sinapsis al inhibir su degradación.",
+    "Porque se administra por vía parenteral y requiere metabolización hepática para ser activo.",
+    "Porque actúa en la neurona presináptica bloqueando la síntesis de acetilcolina."],
+ c:1,
+ e:"Los <strong>agonistas indirectos</strong> no se unen al receptor colinérgico. En cambio, <strong>inhiben la AChE</strong> (enzima que degrada la ACh en la sinapsis) → la ACh no se degrada → se acumula en el espacio sináptico → actúa más tiempo y en mayor concentración sobre sus receptores (muscarínicos Y nicotínicos). El efecto es indirecto porque depende de la ACh endógena liberada. Sin actividad nerviosa presináptica, los inhibidores de AChE tendrían efecto mínimo."},
+
+{t:"Sistema Nervioso Autónomo",tc:"#fb923c",
+ q:"Un paciente con miastenia gravis (MG) tiene antecedente de epilepsia no controlada. Debe iniciar anticolinesterásico para la MG. Considerando el acceso al SNC, ¿cuál fármaco es preferible y por qué?",
+ o:["Fisostigmina: porque atraviesa la BHE y potencia la neurotransmisión colinérgica central, mejorando también la cognición.",
+    "Neostigmina o piridostigmina: porque son aminas cuaternarias que NO atraviesan la BHE, reduciendo el riesgo de convulsiones por exceso colinérgico central.",
+    "Donepezilo: porque es el anticolinesterásico más selectivo para músculo esquelético con mínimos efectos centrales.",
+    "Edrofonio: porque su corta duración minimiza la acumulación de ACh en el SNC."],
+ c:1,
+ e:"<strong>Las aminas cuaternarias</strong> (neostigmina, piridostigmina) tienen carga positiva permanente → NO atraviesan la barrera hematoencefálica (BHE) → efectos restringidos a la periferia. En un paciente epiléptico, el exceso de ACh en el SNC (que sí produciría fisostigmina o donepezilo al cruzar la BHE) podría desencadenar o empeorar convulsiones. Por eso se prefieren las aminas cuaternarias para el manejo de MG en pacientes con patología neurológica central."},
+
+{t:"Sistema Nervioso Autónomo",tc:"#fb923c",
+ q:"Paciente agrícola expuesto a paratión (insecticida organofosforado). Llega con miosis, bradicardia, sialorrea, broncospasmo y fasciculaciones musculares. ¿Qué mecanismo explica la coexistencia de efectos muscarínicos Y nicotínicos?",
+ o:["El paratión actúa directamente sobre ambos tipos de receptores como agonista no selectivo.",
+    "La inhibición irreversible de la AChE acumula ACh en todas las sinapsis: muscarínicas (parasimpáticas) y nicotínicas (NMU y ganglios), produciendo ambos tipos de efectos.",
+    "El paratión bloquea la liberación presináptica de noradrenalina, generando predominio parasimpático.",
+    "Solo se producen efectos muscarínicos; las fasciculaciones son un signo cardiovascular de bradicardia severa."],
+ c:1,
+ e:"Los <strong>organofosforados inhiben la AChE de forma irreversible</strong> (fosforilación covalente de la serina del sitio catalítico). La ACh se acumula en <em>todas</em> las sinapsis colinérgicas: (1) sinapsis muscarínicas → miosis, bradicardia, broncoespasmo, sialorrea; (2) sinapsis nicotínicas neuromusculares → fasciculaciones → parálisis flácida; (3) ganglios autonómicos → taquicardia inicial, hipertensión; (4) SNC → convulsiones, coma. La 'SLUDGE': Salivación, Lagrimeo, Urgencia urinaria, Diarrea, GI, Emesis."},
+
+{t:"Sistema Nervioso Autónomo",tc:"#fb923c",
+ q:"En el tratamiento de intoxicación por organofosforados se usa atropina + pralidoxima (2-PAM). ¿Por qué la pralidoxima debe administrarse lo más pronto posible tras la exposición?",
+ o:["Porque la pralidoxima compite con el organofosforado por el sitio activo de la AChE, siendo menos efectiva con el tiempo.",
+    "Porque con el tiempo ocurre el 'aging': el complejo AChE-organofosforado pierde un grupo alquilo y se vuelve irreversible, impidiendo la reactivación por la pralidoxima.",
+    "Porque la pralidoxima se metaboliza rápidamente y pierde efectividad en plasma después de 2 horas.",
+    "Porque la atropina administrada previamente interfiere con la unión de la pralidoxima a la AChE."],
+ c:1,
+ e:"El <strong>'aging'</strong> (envejecimiento) es el proceso por el cual el complejo AChE-organofosforado experimenta una dealquilación espontánea → vínculo entre el organofosfato y la enzima se vuelve permanente → ya no puede ser revertido por la pralidoxima. El tiempo de aging varía según el organofosforado (horas a días). La pralidoxima funciona solo <em>antes</em> del aging porque transfiere el grupo fosfato de la serina de la AChE hacia sí misma, <strong>regenerando la enzima activa</strong>."},
+
+{t:"Sistema Nervioso Autónomo",tc:"#fb923c",
+ q:"Comparando piridostigmina y neostigmina para el manejo CRÓNICO de miastenia gravis, ¿cuál característica farmacocinética hace preferir piridostigmina en la práctica habitual?",
+ o:["Piridostigmina tiene mayor potencia sobre el músculo esquelético que neostigmina.",
+    "Piridostigmina tiene mayor duración de acción (3–6 h vs 3–4 h) y está disponible en formulación de liberación prolongada, facilitando la adherencia.",
+    "Piridostigmina tiene menor incidencia de efectos muscarínicos porque no inhibe la AChE en glándulas.",
+    "Piridostigmina atraviesa la BHE y potencia la fuerza muscular central, algo que neostigmina no logra."],
+ c:1,
+ e:"En el manejo <strong>crónico</strong> de la MG, la adherencia es fundamental. La <strong>piridostigmina</strong> tiene duración de 3–6 horas (vs ~3h neostigmina oral) y existe en presentación de <em>liberación prolongada</em> que permite dosificación cada 8–12h → mejor adherencia. La neostigmina oral requiere dosificación cada 3–4h (hasta 6 dosis/día). Ambas no atraviesan BHE (aminas cuaternarias). La neostigmina parenteral se usa en crisis agudas o para antagonizar bloqueadores neuromusculares no depolarizantes."},
+
+{t:"Sistema Nervioso Autónomo",tc:"#fb923c",
+ q:"El edrofonio es un inhibidor de AChE de muy corta duración (2–10 min). ¿Para qué uso clínico específico es útil precisamente por esta corta duración?",
+ o:["Tratamiento crónico de la miastenia gravis porque su corta duración permite ajuste fino de dosis.",
+    "Diagnóstico de miastenia gravis: al administrarse IV produce mejoría transitoria de la fuerza muscular si el paciente tiene MG.",
+    "Antagonización de relajantes musculares no depolarizantes al final de la anestesia general.",
+    "Tratamiento del glaucoma por vía tópica ocular reduciendo la presión intraocular."],
+ c:1,
+ e:"El <strong>edrofonio</strong> tiene enlace electrostático con la AChE (no carbamilación) → muy rápido y de muy corta duración (2–10 min). Esto lo hace ideal para el <strong>'test de Tensilon'</strong>: si el paciente tiene MG, la administración IV de 10 mg produce mejoría visible de la ptosis, diplopia y fuerza en <em>segundos</em>. La brevedad del efecto es una ventaja diagnóstica (no se mantiene el efecto indeseado). No sirve para tratamiento crónico (demasiado corto) ni para antagonizar relajantes (insuficiente duración)."},
+
+// ─── ANTAGONISTAS MUSCARÍNICOS ───────────────────────────────
+{t:"Antagonistas Muscarínicos",tc:"#f472b6",
+ q:"La atropina es un antagonista muscarínico prototipo derivado de Atropa belladona. ¿Cuál es el efecto cardiovascular predominante a dosis terapéuticas (1–2 mg) y cuál es su mecanismo?",
+ o:["Bradicardia, por bloqueo de receptores β₁ adrenérgicos en el nodo sinusal.",
+    "Taquicardia, por bloqueo de la acción parasimpática (muscarínica) del nervio vago sobre el nodo sinusal, liberando el tono simpático.",
+    "Hipotensión arterial, por bloqueo de receptores M₁ en las paredes vasculares generando vasodilatación.",
+    "Sin efecto cardiovascular a dosis terapéuticas; la taquicardia solo ocurre con sobredosis."],
+ c:1,
+ e:"El corazón tiene <strong>tono vagal (parasimpático) basal</strong>. La ACh actúa sobre receptores M₂ en el nodo sinusal → bradicardia. La atropina <strong>bloquea estos receptores M₂</strong> → elimina el freno vagal → se libera el tono simpático → <strong>taquicardia</strong>. A dosis muy bajas (0.5 mg) puede haber bradicardia paradójica transitoria (bloqueo de autorreceptores presinápticos M₁ que normalmente inhiben la liberación de ACh). A 1-2 mg: taquicardia clara. ≥10 mg: síndrome anticolinérgico severo."},
+
+{t:"Antagonistas Muscarínicos",tc:"#f472b6",
+ q:"Un paciente con glaucoma de ángulo estrecho llega a urgencias con dolor abdominal intenso. El médico considera usar butilbromuro de escopolamina (antiespasmódico). ¿Qué contraindicación debe considerar y por qué?",
+ o:["No hay contraindicación porque el butilbromuro de escopolamina no actúa sobre el ojo al ser amina cuaternaria.",
+    "El glaucoma de ángulo estrecho es contraindicación relativa de todos los antimuscarínicos sistémicos porque pueden precipitar crisis de glaucoma al generar midriasis.",
+    "El glaucoma de ángulo estrecho es contraindicación solo de antimuscarínicos tópicos oculares, no de los sistémicos.",
+    "Solo es contraindicación si el fármaco atraviesa la BHE; el butilbromuro al no cruzarla no afecta el ojo."],
+ c:1,
+ e:"Los <strong>antimuscarínicos sistémicos</strong> producen <strong>midriasis</strong> (bloqueo M₃ del músculo constrictor del iris) y cicloplejía. En el <strong>glaucoma de ángulo estrecho</strong>, la dilatación pupilar estrecha aún más el ángulo iridocorneal → dificulta el drenaje del humor acuoso → <strong>elevación aguda de la presión intraocular → crisis de glaucoma → dolor ocular severo, pérdida de visión</strong>. Aunque el butilbromuro no cruza la BHE, puede producir midriasis periférica sistémica. Contraindicaciones de antimuscarínicos: glaucoma ángulo estrecho, obstrucción GI, obstrucción urinaria, HBP."},
+
+{t:"Antagonistas Muscarínicos",tc:"#f472b6",
+ q:"El bromuro de tiotropio se usa en EPOC. ¿Qué ventaja farmacocinética tiene sobre el bromuro de ipratropio que justifica su dosificación una vez al día?",
+ o:["El tiotropio tiene mayor biodisponibilidad oral que el ipratropio porque absorbe mejor en el tracto GI.",
+    "El tiotropio tiene mayor duración de acción (24h vs 6h del ipratropio) porque se disocia muy lentamente de los receptores M₁ y M₃ bronquiales.",
+    "El tiotropio atraviesa mejor la BHE, logrando efectos broncodilatadores más potentes desde el SNC.",
+    "El tiotropio se metaboliza más lentamente en el hígado, prolongando su vida media plasmática."],
+ c:1,
+ e:"El <strong>tiotropio</strong> es un antimuscarínico de <em>acción ultralarga</em>. Tiene disociación cinéticamente lenta de los receptores M₁ y M₃ (t½ disociación M₃ ~34h). Esto permite <strong>una sola dosis diaria de 18 mcg</strong> vs el ipratropio que dura ~6h y requiere dosificación 3–4 veces/día. Ambos son aminas cuaternarias → no cruzan BHE → efectos sistémicos mínimos → se administran por vía inhalatoria para efecto local pulmonar. La mayor adherencia del tiotropio mejora el control de EPOC."},
+
+{t:"Antagonistas Muscarínicos",tc:"#f472b6",
+ q:"Una paciente de 72 años con vejiga hiperactiva inicia tratamiento. El médico opta por trospio en lugar de oxibutinina. ¿Qué característica farmacológica justifica esta elección en una paciente de edad avanzada?",
+ o:["El trospio tiene mayor potencia antimuscarínica sobre la vejiga que la oxibutinina.",
+    "El trospio es una amina cuaternaria que no cruza la BHE → menor riesgo de deterioro cognitivo en adultos mayores.",
+    "El trospio se elimina más rápido, reduciendo el riesgo de acumulación en insuficiencia renal.",
+    "El trospio no produce efectos muscarínicos periféricos como boca seca o estreñimiento."],
+ c:1,
+ e:"En adultos mayores, los efectos cognitivos de los antimuscarínicos (confusión, deterioro de memoria) son una preocupación crítica. La <strong>oxibutinina</strong> es lipofílica y atraviesa la BHE → puede causar deterioro cognitivo, confusión, alucinaciones. El <strong>trospio</strong> es una amina cuaternaria con carga permanente → <strong>no atraviesa la BHE</strong> → mínimos efectos sobre SNC → más seguro en adultos mayores. Ambos producen efectos periféricos similares (boca seca, estreñimiento, retención urinaria) pero el trospio es preferido neurológicamente."},
+
+{t:"Antagonistas Muscarínicos",tc:"#f472b6",
+ q:"La tropicamida se usa en exámenes oftalmológicos para producir midriasis. Comparada con la atropina oftálmica, ¿cuál es la diferencia clínicamente relevante?",
+ o:["La tropicamida no produce cicloplejía, solo midriasis, por lo que es mejor para exploración de fondo de ojo.",
+    "La tropicamida tiene acción más rápida y de menor duración (recuperación en horas vs 7-10 días de atropina), permitiendo al paciente recuperar la visión normal en el mismo día.",
+    "La tropicamida se absorbe sistémicamente y puede causar taquicardia y sequedad de boca a diferencia de la atropina.",
+    "La tropicamida es la única que produce parálisis completa de la acomodación (cicloplejía), necesaria para refracción en niños."],
+ c:1,
+ e:"Tabla de efectos oculares: La <strong>atropina</strong> produce midriasis máxima en 30-40 min con recuperación en <strong>7-10 días</strong> (muy larga). La <strong>tropicamida</strong> produce midriasis máxima en 30 min con recuperación en <strong>~1 día</strong> (mucho más corta). Esto la hace ideal para exámenes de fondo de ojo donde se necesita midriasis temporal sin inhabilitar al paciente por días. Ambas producen cicloplejía. El ciclopentolato tiene duración intermedia (~1 día) y se usa para refracción pediátrica."},
+
+// ─── INTERACCIONES Y RAM ──────────────────────────────────────
+{t:"Interacciones Farmacológicas",tc:"#facc15",
+ q:"Un paciente diabético controlado con glibenclamida inicia tratamiento con prednisona (corticoide) por un brote inflamatorio. Días después su glucemia sube descontroladamente. ¿Qué tipo de interacción farmacológica explica esto?",
+ o:["Interacción farmacocinética: la prednisona inhibe el CYP3A4 aumentando los niveles plasmáticos de glibenclamida.",
+    "Antagonismo funcional/fisiológico: ambos fármacos actúan en receptores distintos con efectos opuestos sobre la glucemia.",
+    "Antagonismo competitivo: la prednisona compite por los mismos receptores de glibenclamida en el páncreas.",
+    "Incompatibilidad química: glibenclamida y prednisona forman un precipitado que reduce la absorción de ambas."],
+ c:1,
+ e:"<strong>Antagonismo funcional/fisiológico:</strong> los dos fármacos actúan en <em>receptores distintos</em> con efectos <em>opuestos</em> sobre el mismo proceso fisiológico (glucemia). Glibenclamida (receptor SUR1 en páncreas) → libera insulina → baja glucemia. Prednisona (receptor glucocorticoide nuclear) → induce gluconeogénesis hepática, resistencia insulínica → sube glucemia. El resultado es que la prednisona <strong>antagoniza funcionalmente el efecto</strong> de glibenclamida sin haber contacto entre las moléculas ni interacción por el mismo receptor."},
+
+{t:"Interacciones Farmacológicas",tc:"#facc15",
+ q:"El sugammadex revierte el bloqueo neuromuscular producido por el rocuronio en quirófano. ¿Qué tipo de antagonismo/interacción representa?",
+ o:["Antagonismo competitivo: el sugammadex ocupa el receptor nicotínico desplazando al rocuronio.",
+    "Antagonismo químico/incompatibilidad farmacéutica: el sugammadex encapsula la molécula de rocuronio en plasma, impidiendo que llegue a su receptor.",
+    "Antagonismo no competitivo: el sugammadex se une en sitio alostérico del receptor nicotínico reduciendo el efecto del rocuronio.",
+    "Antagonismo fisiológico: el sugammadex activa los receptores nicotínicos de forma independiente."],
+ c:1,
+ e:"<strong>Antagonismo químico</strong> (incompatibilidad farmacéutica funcional): el sugammadex es una γ-ciclodextrina modificada que forma un complejo 1:1 de alta afinidad con el rocuronio en el plasma, <strong>atrapándolo</strong> en su cavidad hidrofóbica. Esto reduce drásticamente la concentración libre de rocuronio → el fármaco sale del receptor nicotínico hacia el plasma donde es 'capturado'. El sugammadex NO interactúa con ningún receptor. Es una interacción molécula-a-molécula directa = antagonismo químico."},
+
+{t:"Interacciones Farmacológicas",tc:"#facc15",
+ q:"Un paciente recibe warfarina (anticoagulante oral, metabolizada por CYP2C9) e inicia eritromicina (antibiótico, inhibidor de CYP3A4/CYP2C9). ¿Qué tipo de interacción farmacocinética ocurre y cuál es el riesgo?",
+ o:["La eritromicina induce el CYP2C9, aumentando el metabolismo de warfarina → niveles más bajos → riesgo de trombosis.",
+    "La eritromicina inhibe el CYP2C9, disminuyendo el metabolismo de warfarina → acumulación → mayor riesgo de sangrado grave.",
+    "La eritromicina desplaza la warfarina de las proteínas plasmáticas, aumentando la fracción libre pero sin cambio en el efecto.",
+    "La eritromicina aumenta la absorción intestinal de warfarina al inhibir la P-glicoproteína intestinal."],
+ c:1,
+ e:"<strong>Interacción farmacocinética en metabolismo:</strong> la eritromicina es un conocido inhibidor enzimático (CYP3A4 y también CYP2C9). Al inhibir CYP2C9 → <strong>se enlentece el metabolismo de warfarina</strong> → warfarina se acumula en plasma → efecto anticoagulante exagerado → <strong>riesgo de sangrado grave</strong>. La warfarina tiene IT muy estrecho (INR terapéutico 2-3). Esta interacción obliga a monitoreo frecuente de INR al combinar anticoagulantes orales con antibióticos. La clave: inhibidor enzimático → aumenta niveles del fármaco sustrato."},
+
+{t:"Interacciones Farmacológicas",tc:"#facc15",
+ q:"Un paciente toma un fármaco con alto metabolismo de primer paso hepático (F=30% oral). Su médico decide cambiar la vía de administración para aumentar la biodisponibilidad. ¿Cuál de las siguientes alternativas NO evita el primer paso hepático?",
+ o:["Vía sublingual.",
+    "Vía transdérmica.",
+    "Vía intramuscular.",
+    "Vía rectal baja (tampón rectal)."],
+ c:3,
+ e:"<strong>Vías que evitan totalmente el primer paso hepático:</strong> sublingual (va a vena cava directa), transdérmica (va a circulación sistémica directamente), intravenosa, intramuscular, subcutánea, inhalatoria. <strong>La vía rectal</strong> tiene comportamiento mixto: la porción baja del recto drena a las venas hemorroidales inferiores (→ vena cava, evita hígado), pero la porción media-alta drena a la vena porta → hígado. Por eso la vía rectal <strong>solo evita parcialmente</strong> el primer paso. Además tiene absorción errática e incompleta."},
+
+{t:"Interacciones Farmacológicas",tc:"#facc15",
+ q:"Al combinar dos fármacos, el efecto observado es MAYOR que la suma de los efectos individuales. ¿Cómo se denomina este fenómeno y qué ejemplo lo ilustra?",
+ o:["Adición: el captopril + enalapril suman sus efectos antihipertensivos de manera predecible.",
+    "Potenciación/sinergia supraditiva: la combinación amoxicilina + ácido clavulánico donde el ácido clavulánico potencia el efecto antibacteriano del amoxicilina al inhibir las β-lactamasas.",
+    "Antagonismo funcional: la combinación produce más efecto porque los fármacos actúan en receptores diferentes que se potencian.",
+    "Tolerancia cruzada: el organismo responde más a ambos fármacos al desarrollar adaptación."],
+ c:1,
+ e:"<strong>Potenciación/sinergia supraditiva:</strong> efecto conjunto > suma individual. El ácido clavulánico por sí mismo tiene escasa actividad antibacteriana, pero al inhibir las β-lactamasas bacterianas, 'protege' a la amoxicilina de ser degradada → la amoxicilina puede actuar aunque haya bacterias resistentes. El efecto combinado es mayor que la suma. Otro ejemplo: cotrimoxazol (trimetoprim + sulfametoxazol). Distinto a <strong>adición</strong> (efecto = suma exacta, ej: dos IBP al 50% de dosis) o <strong>antagonismo</strong> (efecto menor)."},
+
+// ─── FARMACOLOGÍA GENERAL ─────────────────────────────────────
+{t:"Farmacología General",tc:"#c084fc",
+ q:"Un laboratorio sintetiza un fármaco con pKa=7.4. ¿Qué proporción de la forma ionizada/no ionizada estará presente en plasma (pH=7.4) si es un ácido débil?",
+ o:["100% ionizado en plasma porque el pH es igual al pKa.",
+    "50% ionizado y 50% no ionizado en plasma, porque cuando pH=pKa la relación [A⁻]/[AH]=1.",
+    "Predominantemente no ionizado porque el pH plasmático es alcalino respecto al pKa.",
+    "Predominantemente ionizado porque los ácidos siempre se ionizan en pH fisiológico."],
+ c:1,
+ e:"<strong>Henderson-Hasselbalch:</strong> pH = pKa + log([A⁻]/[AH]). Si pH = pKa → 7.4 = 7.4 + log(x) → log(x)=0 → x=1 → <strong>[A⁻]=[AH] → 50% ionizado, 50% no ionizado</strong>. Este es el punto de pKa: exactamente la mitad de las moléculas están en cada forma. Importante: la forma NO ionizada cruza membranas libremente (lipofílica). La forma ionizada no cruza (hidrofílica). Un fármaco con pKa=7.4 tendrá aproximadamente igual distribución en plasma y tendrá distribución tisular moderada."},
+
+{t:"Farmacología General",tc:"#c084fc",
+ q:"La RAM tipo B (idiosincrásica) de un fármaco se diferencia de la tipo A principalmente porque:",
+ o:["La RAM tipo B es más frecuente, predecible y dependiente de la dosis administrada.",
+    "La RAM tipo B es independiente de la dosis, impredecible, y generalmente de base inmunológica o genética.",
+    "La RAM tipo B corresponde al efecto esperado del fármaco pero exagerado por sobredosis.",
+    "La RAM tipo B ocurre solo con administración crónica después de semanas de tratamiento."],
+ c:1,
+ e:"Clasificación de RAM: <strong>Tipo A (Augmented)</strong>: relacionada con el mecanismo de acción, predecible, dosis-dependiente, más frecuente (80%). Ej: hipoglucemia por insulina. <strong>Tipo B (Bizarre)</strong>: no relacionada con el mecanismo de acción, impredecible, dosis-independiente, infrecuente pero más grave. Base <em>farmacogenómica o inmunológica</em>. Ej: anemia hemolítica por primaquina en déficit de G6PD, anafilaxia por penicilina. <strong>Tipo C</strong>: crónica, por uso prolongado. <strong>Tipo D</strong>: retardada (meses/años). <strong>Tipo E</strong>: al retirar el fármaco."},
+
+{t:"Farmacología General",tc:"#c084fc",
+ q:"Un fármaco tiene alta unión a proteínas plasmáticas (98%). ¿Qué consecuencia tiene esto sobre su actividad farmacológica y sobre posibles interacciones?",
+ o:["El 98% unido a albumina es la fracción activa; el 2% libre es inactivo porque no puede llegar al receptor.",
+    "Solo el 2% libre ejerce efecto farmacológico; si otro fármaco compite por la albumina puede desplazarlo, aumentando la fracción libre y el efecto/toxicidad.",
+    "La alta unión a proteínas aumenta el Vd porque el fármaco se distribuye ampliamente desde el plasma hacia los tejidos.",
+    "La alta unión a proteínas protege al fármaco del metabolismo hepático total."],
+ c:1,
+ e:"<strong>Solo la fracción LIBRE</strong> es farmacológicamente activa (puede unirse al receptor, distribuirse a tejidos, ser metabolizada y excretada). El ibuprofeno tiene 95% unido → solo 5% activo. Si se co-administra otro fármaco que compite por la albumina → el primer fármaco es desplazado → aumenta su fracción libre → mayor efecto y potencial toxicidad. Esto es especialmente relevante para fármacos de IT estrecho (warfarina 99% unida). Alta unión a proteínas → Vd bajo (fármaco queda en plasma), no alto."},
+
+{t:"Farmacología General",tc:"#c084fc",
+ q:"Un fármaco se administra por vía oral en comprimido de liberación prolongada (LP). El cuidador del paciente lo tritura para facilitar la deglución. ¿Qué riesgo farmacológico genera esta práctica?",
+ o:["Ninguno, triturar mejora la disolución y hace el fármaco más efectivo.",
+    "Libera todo el principio activo de golpe (dosis completa de 12-24h en minutos) → riesgo de toxicidad aguda por pico de concentración por encima de la CMT.",
+    "Reduce la biodisponibilidad porque el ácido gástrico degrada el principio activo al exponerse directamente.",
+    "Solo aplica si el comprimido es entérico; los LP pueden triturarse sin consecuencias."],
+ c:1,
+ e:"Los <strong>comprimidos LP (liberación prolongada)</strong> tienen una matriz o recubrimiento especial diseñado para liberar el PA lentamente (orden 0) durante 8-24h. Al triturar: se destruye el sistema de liberación → todo el PA se libera de inmediato → <strong>concentración plasmática sube rápidamente muy por encima de la CMT → toxicidad aguda</strong>. Ej: comprimidos LP de morfina, metformina SR, metoprolol SR, nifedipino LP. Los comprimidos entéricos tampoco deben triturarse (se destruye el recubrimiento que los protege del ácido gástrico). Regla: NUNCA triturar LP ni entérico."}
+];
+
+// ─── QUIZ ENGINE ───────────────────────────────────────────────
+let cur=0, score=0, ans=new Array(Q.length).fill(undefined);
+const LETTERS=['A','B','C','D'];
+
+function startQuiz(){
+  document.getElementById('start').style.display='none';
+  document.getElementById('quiz').style.display='block';
+  renderAll();
+  show(0);
+}
+
+function renderAll(){
+  const c=document.getElementById('qcontainer');
+  c.innerHTML='';
+  Q.forEach((q,i)=>{
+    const d=document.createElement('div');
+    d.className='qcard'+(i===0?' active':'');
+    d.id='q'+i;
+    const vis=q.vis?`<div class="qvis">${q.vis}</div>`:'';
+    const opts=q.o.map((o,j)=>
+      `<button class="optbtn" id="opt${i}_${j}" onclick="pick(${i},${j})">
+        <span class="let">${LETTERS[j]}</span><span>${o}</span>
+      </button>`).join('');
+    d.innerHTML=`
+      <div class="qmeta">
+        <div class="qnum">Pregunta ${i+1}/${Q.length}</div>
+        <span class="qtopic chip" style="color:${q.tc};border-color:${q.tc}35;">${q.t}</span>
+      </div>
+      <div class="qtext">${q.q}</div>
+      ${vis}
+      <div class="opts">${opts}</div>
+      <div class="expl" id="ex${i}">${q.e}</div>
+      <div class="navrow">
+        <button class="btn btn-g" onclick="go(${i-1})" ${i===0?'disabled':''}>← Anterior</button>
+        <button class="btn btn-p" id="nb${i}" onclick="go(${i+1})" disabled>${i===Q.length-1?'Ver resultados →':'Siguiente →'}</button>
+      </div>`;
+    c.appendChild(d);
+  });
+}
+
+function pick(qi,oi){
+  if(ans[qi]!==undefined)return;
+  ans[qi]=oi;
+  const q=Q[qi];
+  const btns=document.querySelectorAll(`#q${qi} .optbtn`);
+  btns.forEach((b,j)=>{
+    b.disabled=true;
+    if(j===q.c) b.classList.add(oi===q.c?'correct':'reveal');
+  });
+  const chosen=document.getElementById(`opt${qi}_${oi}`);
+  if(oi===q.c){chosen.classList.add('correct');score++;}
+  else{chosen.classList.add('wrong');document.getElementById(`opt${qi}_${q.c}`).classList.add('correct');}
+  document.getElementById(`ex${qi}`).classList.add('show');
+  document.getElementById(`nb${qi}`).disabled=false;
+  document.getElementById('slive').textContent=`${score} correcta${score!==1?'s':''}`;
+  upProg();
+}
+
+function go(idx){
+  if(idx<0||idx>Q.length-1){if(idx===Q.length)showResults();return;}
+  show(idx);
+}
+
+function show(idx){
+  document.querySelectorAll('.qcard').forEach(c=>c.classList.remove('active'));
+  document.getElementById('q'+idx).classList.add('active');
+  cur=idx;upProg();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function upProg(){
+  const done=ans.filter(a=>a!==undefined).length;
+  document.getElementById('pfill').style.width=(done/Q.length*100)+'%';
+  document.getElementById('ptxt').textContent=`Pregunta ${cur+1} de ${Q.length}`;
+}
+
+function showResults(){
+  document.getElementById('quiz').style.display='none';
+  const rs=document.getElementById('results');
+  rs.classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+  const pct=Math.round(score/Q.length*100);
+  document.getElementById('rco').textContent=score;
+  document.getElementById('rwr').textContent=Q.length-score;
+  document.getElementById('rpct').textContent=pct+'%';
+  const arc=document.getElementById('rarc');
+  const c=376.99;
+  const off=c-(pct/100*c);
+  arc.style.stroke=pct>=75?'#4ade80':pct>=50?'#fb923c':'#f87171';
+  setTimeout(()=>{arc.style.strokeDashoffset=off;},100);
+  const msgs=[
+    [0,49,"Necesitas repasar el material con atención. Revisa las explicaciones de cada pregunta — están diseñadas para guiarte."],
+    [50,74,"Vas bien encaminado/a. Refuerza los temas donde fallaste, especialmente interacciones y mecanismos específicos."],
+    [75,89,"¡Muy buen resultado! Dominas la mayoría del contenido. Repasa los puntos específicos donde fallaste."],
+    [90,100,"¡Excelente! Tienes un sólido dominio de la farmacología. Estás muy preparado/a para la solemne."]
+  ];
+  document.getElementById('rmsg').textContent=msgs.find(([a,b])=>pct>=a&&pct<=b)[2];
+  const bd=document.getElementById('bkdown');
+  bd.innerHTML='<div class="bk-title">Resumen por pregunta</div>';
+  Q.forEach((q,i)=>{
+    const ok=ans[i]===q.c;
+    const it=document.createElement('div');
+    it.className='bki';
+    it.innerHTML=`<span class="ico">${ok?'✅':'❌'}</span>
+      <div style="flex:1">
+        <div>${q.q.replace(/<[^>]+>/g,'').substring(0,70)}…</div>
+        <div class="ref">${q.t} · P${i+1} · Elegiste: ${ans[i]!==undefined?LETTERS[ans[i]]:'—'} · Correcta: ${LETTERS[q.c]}</div>
+      </div>`;
+    bd.appendChild(it);
+  });
+}
+
+function reviewQuiz(){
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('quiz').style.display='block';
+  show(0);
+}
+
+function restartQuiz(){
+  score=0;cur=0;ans=new Array(Q.length).fill(undefined);
+  document.getElementById('results').classList.remove('show');
+  document.getElementById('slive').textContent='0 correctas';
+  document.getElementById('quiz').style.display='block';
+  renderAll();show(0);
+}
+</script>
+</body>
+</html>
